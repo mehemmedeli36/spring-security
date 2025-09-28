@@ -2,12 +2,13 @@ package com.example.jwt;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
@@ -16,8 +17,10 @@ import org.springframework.stereotype.Component;
 
 import com.example.dto.TokenDto;
 import com.example.model.RefreshToken;
+import com.example.model.Role;
 import com.example.model.User;
 import com.example.repository.RefreshTokenRepository;
+import com.example.repository.UserRepository;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -28,6 +31,8 @@ import io.jsonwebtoken.security.Keys;
 public class JwtService {
 	@Autowired
 	private RefreshTokenRepository refreshTokenRepository;
+	@Autowired 
+	private UserRepository userRepository;
 	
 	public static final String SECRET_KEY = "kIduUVUPApcD4UzqbfLOB/OwrED69kUXWPpGBBNZZFk=";
 	
@@ -42,21 +47,31 @@ public class JwtService {
 		return token;
 	}
 	
+	public String refreshAccessToken(String refreshToken) {
+		Optional<RefreshToken> optional= refreshTokenRepository.findByToken(refreshToken);
+		if(!optional.isPresent()) return null;
+		String accessToken=generateAccessToken(userRepository.findByUsernameWithRoles(optional.get().getUser().getUsername()).get());
+		return accessToken;
+	}
+	
 	public String generateAccessToken(User user) {
-		Map<String, List<String>> claimsMap=new HashMap<>();
-	    List<String> roles=user.getRoles().stream().map(x->x.getName()).toList();
-		claimsMap.put("roles", roles);
+	    List<String> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList())
+                .stream().map(Role::getName).toList();
+
+               Map<String, Object> claimsMap = new HashMap<>();
+               claimsMap.put("roles", roles);
+
         return Jwts.builder()
                 .subject(user.getUsername())
                 .issuer("my-app")
                 .claims(claimsMap)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 2))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 *10))
                 .signWith(getKey())
                 .compact();
 	}
 	
-	public TokenDto generateToken(User userDetails) {
+	public TokenDto generateTokens(User userDetails) {
           String accessToken= generateAccessToken(userDetails);
           String refreshToken=generateRefreshToken(userDetails);
           return new TokenDto(accessToken,refreshToken);
@@ -81,21 +96,40 @@ public class JwtService {
          return payload;
 	}
 	
-	public <T> T exportToken(String token,Function<Claims, T> claimFunction) {
+	public Claims exportToken(String token) {
         Claims payload = Jwts.parser()
                 .verifyWith(getKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        return claimFunction.apply(payload);
+        return payload;
 	}
 	
-	public String getUsernameByToken(String token) {
-		return exportToken(token, Claims->Claims.getSubject());
+	public User getUserByToken(String token) {
+		Claims claims= exportToken(token);
+		List<String> roles = Optional.ofNullable(claims.get("roles", List.class))
+				
+		        .map(list -> ((List<?>) list).stream()
+		                .map(Object::toString)
+		                .toList()
+		        )
+		        .orElse(Collections.emptyList());
+		
+		List<Role> rollsList= roles.stream().map(x->
+		{
+			Role role=new Role(); 
+			role.setName(x);
+			return role;
+		}).toList();
+
+		User user=new User();
+		user.setUsername(claims.getSubject());
+		user.setRoles(rollsList);
+		return user;
 	}
 	
 	public boolean isTokenExpired(String token) {
-		Date date=exportToken(token, Claims::getExpiration);
+		Date date=exportToken(token).getExpiration();
 		return new Date().before(date);
 	}
 	

@@ -19,13 +19,19 @@ public class EmployeeController {
 
 	@Autowired
 	private EmployeeService employeeService;
+
 	@GetMapping(path = "/{id}")
 	public Employee get(@PathVariable UUID id) {
 		return employeeService.findById(id);
 	}
-	
+
 	@PostMapping
 	public Employee add(@RequestBody Employee employee) {
 		return employeeService.add(employee);
+	}
+
+	@GetMapping(path = "/test")
+	public boolean test() {
+		return true;
 	}
 }

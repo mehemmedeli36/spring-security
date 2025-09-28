@@ -16,16 +16,14 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 	@Autowired
 	private ObjectMapper mapper;
+
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,
 			org.springframework.security.core.AuthenticationException authException)
 			throws java.io.IOException, ServletException {
-//		response.setContentType("application/json");
-//        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-//        response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
-		Result<Void> result=Result.error(HttpStatus.UNAUTHORIZED, authException.getMessage());
+		Result<Void> result = Result.error(HttpStatus.UNAUTHORIZED, authException.getMessage());
 		response.setContentType("application/json");
-        response.setStatus(401);
-        response.getWriter().write(mapper.writeValueAsString(result));
+		response.setStatus(401);
+		response.getWriter().write(mapper.writeValueAsString(result));
 	}
 }

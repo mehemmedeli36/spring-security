@@ -32,16 +32,10 @@ public class SecurityConfig {
 	@Autowired 
 	private JwtAuthenticationEntryPoint entryPoint;
 	
-//	public  SecurityConfig(AuthenticationManager authManager,JwtAuthenticationFilter authenticationFilter) {
-//		this.authManager=authManager;
-//		this.authenticationFilter=authenticationFilter;
-//	}
-	
 	@Bean
      SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 	   http.exceptionHandling(exceptions-> exceptions.accessDeniedHandler(accessDeniedHandler).authenticationEntryPoint(entryPoint)).csrf(csrf -> csrf.disable()).authorizeHttpRequests(request->request
-			   .requestMatchers("/employee/**").hasRole("ADMIN")
-			   .requestMatchers("/department/**").authenticated()
+			   .requestMatchers("/employee/**").authenticated()
 			   .requestMatchers("/test/**").hasAnyRole("USER","ADMIN")
 	            .anyRequest().permitAll()
 	            )

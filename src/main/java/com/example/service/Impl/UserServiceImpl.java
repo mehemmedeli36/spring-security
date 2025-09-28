@@ -25,8 +25,9 @@ public class UserServiceImpl implements UserService{
 	@Autowired
 	private JwtService jwtService;
 	@Override
+	
 	public Optional<User> findByUsername(String username) {
-		return userRepository.findByUsername(username);
+		return userRepository.findByUsernameWithRoles(username);
 	}
 	@Override
 	public UserDto register(RegisterDto dto) {
@@ -42,10 +43,10 @@ public class UserServiceImpl implements UserService{
 	}
 	@Override
 	public TokenDto login(LoginDto dto) {
-		Optional<User> optional=userRepository.findByUsername(dto.getUsername());
+		Optional<User> optional=userRepository.findByUsernameWithRoles(dto.getUsername());
 		if(optional.isPresent()) {
 			User user= optional.get();
-			return jwtService.generateToken(user);
+			return jwtService.generateTokens(user);
 		}
 		return null;
 	}

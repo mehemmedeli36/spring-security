@@ -18,14 +18,14 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 	@Autowired
 	private ObjectMapper mapper;
+
 	@Override
 	public void handle(HttpServletRequest request, HttpServletResponse response,
 			org.springframework.security.access.AccessDeniedException accessDeniedException)
 			throws IOException, ServletException {
-		Result<Void> result=Result.error(HttpStatus.NOT_ACCEPTABLE, accessDeniedException.getMessage());
+		Result<Void> result = Result.error(HttpStatus.UNAUTHORIZED, accessDeniedException.getMessage());
 		response.setContentType("application/json");
-        response.setStatus(403);
-        response.getWriter().write(mapper.writeValueAsString(result));
-		
+		response.setStatus(403);
+		response.getWriter().write(mapper.writeValueAsString(result));
 	}
 }
